@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+insightface
+onnxruntime
+opencv-python
+numpy
+pandas
+openpyxl
+jupyter

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Attendance System</title>
+<style>
+:root{--bg:#0b0b0d;--panel:#17181c;--p2:#1f2026;--tx:#f2f3f5;--mut:#8b8f9a;--ac:#2f5bff;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--bd:#26272e}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f2f6;--panel:#fff;--p2:#eceef3;--tx:#14151a;--mut:#666b78;--bd:#dfe1e8}}
+:root[data-theme="light"]{--bg:#f1f2f6;--panel:#fff;--p2:#eceef3;--tx:#14151a;--mut:#666b78;--bd:#dfe1e8}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--tx);font:14px/1.4 Inter,system-ui,sans-serif;display:flex;min-height:100vh}
+aside{width:76px;background:var(--panel);display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 0;position:sticky;top:0;height:100vh}
+aside a{width:60px;padding:8px 0;border-radius:10px;text-align:center;color:var(--mut);text-decoration:none;font-size:10px}
+aside a i{display:block;font-style:normal;font-size:19px}aside a.on{color:var(--ac);background:var(--p2);box-shadow:inset -3px 0 var(--ac)}
+main{flex:1;padding:18px;max-width:1240px;margin:0 auto;min-width:0}
+header{background:var(--panel);border-radius:8px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+h1{margin:0;font-size:20px}
+button,.btn{background:var(--ac);color:#fff;border:0;border-radius:6px;padding:9px 14px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button.g{background:var(--p2);color:var(--tx)}button.d{background:transparent;color:var(--bad);padding:4px 8px}
+.pill{padding:5px 12px;border-radius:99px;font-size:12px}.pill.on{background:#22c55e26;color:var(--ok)}.pill.off{background:var(--p2);color:var(--mut)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.card{background:var(--panel);border-radius:8px;padding:18px}
+.n{font-size:34px;font-weight:600}.l{font-weight:600}.s{font-size:12px;color:var(--mut)}
+.row2{display:grid;gap:14px;grid-template-columns:2fr 1fr;margin-top:14px}
+@media(max-width:860px){.row2{grid-template-columns:1fr}aside{width:56px}aside a{width:48px;font-size:0}}
+svg.ch{width:100%;height:220px}
+input,select{background:var(--p2);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:8px;width:100%;font:inherit}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+.f{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.f>div{flex:1;min-width:130px}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:460px}
+th{color:var(--mut);font-weight:500;text-align:left;font-size:12px}td,th{padding:9px 6px;border-bottom:1px solid var(--bd)}
+.tag{padding:2px 8px;border-radius:99px;font-size:11px}.Present{background:#22c55e26;color:var(--ok)}.Late{background:#f59e0b26;color:var(--warn)}.Absent{background:#ef444426;color:var(--bad)}
+.seg{display:inline-flex;background:var(--p2);border-radius:8px;padding:3px}.seg button{background:transparent;color:var(--mut);padding:6px 14px}.seg button.sel{background:var(--ac);color:#fff}
+#stage,.cam{position:relative;background:#000;border-radius:8px;overflow:hidden}
+#stage{aspect-ratio:16/9;width:100%}#stage:fullscreen{border-radius:0;aspect-ratio:auto;height:100%}
+.cam{aspect-ratio:4/3}
+video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.oval{position:absolute;left:50%;top:50%;width:46%;height:72%;transform:translate(-50%,-50%);border:3px dashed #ffffff88;border-radius:50%}
+.ov{position:absolute;color:#fff;text-shadow:0 1px 4px #000}
+#hud{left:16px;top:14px;font-size:18px;font-weight:600}#clk2{left:16px;bottom:14px;font-size:30px}
+#seg2{position:absolute;right:14px;top:12px}#fsb{position:absolute;right:14px;bottom:12px}
+#idle{inset:0;display:grid;place-items:center;text-align:center;background:#000c;font-size:28px}
+#pop{left:50%;bottom:70px;transform:translateX(-50%);font-size:24px;font-weight:600;background:#22c55ecc;padding:10px 22px;border-radius:99px;opacity:0;transition:opacity .25s}#pop.show{opacity:1}
+.chips button{background:var(--p2);color:var(--mut);margin:2px}.chips button.sel{background:var(--ac);color:#fff}
+ul{list-style:none;margin:8px 0 0;padding:0}li{padding:7px 0;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;gap:8px}
+#msg{margin-top:8px;font-size:13px;color:var(--mut);min-height:20px}
+</style></head><body>
+<aside id="nav"></aside>
+<main>
+<header><h1 id="ttl">Dashboard</h1><div><span class="s" id="demo" hidden>Public demo · sample data · resets on restart&nbsp;&nbsp;</span><span class="pill off" id="st">…</span> <button class="g" onclick="tg()">◐</button></div></header>
+
+<section id="dash">
+ <div class="grid">
+  <div class="card"><div class="n" id="clk"></div><div class="s" id="day"></div></div>
+  <div class="card"><div class="n" id="t">–</div><div class="l">Students</div><div class="s">Registered</div></div>
+  <div class="card"><div class="n" id="p">–</div><div class="l">Present</div><div class="s">Seen today</div></div>
+  <div class="card"><div class="n" id="lt">–</div><div class="l">Late</div><div class="s">After the late time</div></div>
+  <div class="card"><div class="n" id="a">–</div><div class="l">Absent</div><div class="s">Not seen today</div></div>
+ </div>
+ <div class="row2">
+  <div class="card"><b>Attendance by day</b><svg class="ch" id="ch" viewBox="0 0 600 220" preserveAspectRatio="none"></svg></div>
+  <div class="card"><b>Today's log</b><div class="scroll"><table><tbody id="lg"></tbody></table></div></div>
+ </div>
+</section>
+
+<section id="live" hidden>
+ <div id="stage"><video id="v" autoplay playsinline muted></video><canvas id="o"></canvas>
+  <div class="ov" id="hud"></div><div class="ov" id="clk2"></div>
+  <div class="seg" id="seg2"><button data-m="auto">Auto</button><button data-m="on">On</button><button data-m="off">Off</button></div>
+  <button class="g" id="fsb" onclick="fs()">⛶ Full screen</button>
+  <div class="ov" id="idle" hidden><div>Attendance is closed<br><small id="nx"></small></div></div><div class="ov" id="pop"></div></div>
+ <div class="row2"><div class="card"><b>Just marked</b><ul id="feed"></ul></div><div class="card"><b>Present today</b><div class="n" id="cnt">–</div><div class="s">Auto mode opens and closes with the schedule. Keep this page open, full screen, on the kiosk.</div></div></div>
+</section>
+
+<section id="students" hidden>
+ <div class="row2" style="grid-template-columns:1fr 1.4fr;margin-top:0">
+  <div class="card"><b>Register a student</b>
+   <div class="f"><div><label>Roll number</label><input id="er"></div><div><label>Group / class</label><input id="eg" placeholder="e.g. CS-3A"></div></div>
+   <label>Full name</label><input id="en">
+   <div class="cam" style="margin-top:10px"><video id="rv" autoplay playsinline muted></video><div class="oval"></div></div>
+   <div id="msg">Start the camera, fit the face in the oval, then capture.</div>
+   <div class="f" style="margin-top:8px"><button class="g" onclick="cam($('#rv'))">Start camera</button><button onclick="burst()">Capture 8 photos</button></div>
+   <label>Or upload 3+ clear photos</label><input type="file" id="up" accept="image/*" multiple onchange="upload()">
+  </div>
+  <div class="card"><b>Students</b>
+   <div class="f"><div><input id="sq" placeholder="Search name or roll" oninput="stu()"></div><div><select id="sg" onchange="stu()"><option value="">All groups</option></select></div></div>
+   <div class="scroll"><table><thead><tr><th>Roll</th><th>Name</th><th>Group</th><th>Photos</th><th></th></tr></thead><tbody id="sl"></tbody></table></div></div>
+ </div>
+</section>
+
+<section id="sched" hidden>
+ <div class="row2" style="grid-template-columns:1fr 1.2fr;margin-top:0">
+  <div class="card"><b>New attendance time</b>
+   <label>Name</label><input id="sn" placeholder="Morning class">
+   <label>Days</label><div class="chips" id="days"></div>
+   <div class="f"><div><label>Opens</label><input type="time" id="ss" value="08:00"></div><div><label>Closes</label><input type="time" id="se" value="09:30"></div><div><label>Late after</label><input type="time" id="sl2" value="08:15"></div></div>
+   <div style="margin-top:12px"><button onclick="saveS()">Save schedule</button></div>
+   <div class="s" style="margin-top:10px">Attendance opens and closes by itself in Auto mode. When a session closes, an Excel file is saved in the server's <b>exports</b> folder.</div></div>
+  <div class="card"><b>Schedules</b><div class="scroll"><table><tbody id="sc"></tbody></table></div></div>
+ </div>
+</section>
+
+<section id="rep" hidden>
+ <div class="card"><div class="f">
+  <div><label>Report</label><select id="rk"><option value="daily">Daily records</option><option value="student">By student</option><option value="day">By day</option></select></div>
+  <div><label>From</label><input type="date" id="rs"></div><div><label>To</label><input type="date" id="re"></div>
+  <div><label>Group</label><select id="rg"><option value="">All</option></select></div>
+  <div><label>Status</label><select id="rt"><option value="">All</option><option>Present</option><option>Late</option><option>Absent</option></select></div>
+  <div><label>Search</label><input id="rq" placeholder="Name or roll"></div></div>
+  <div class="f" style="margin-top:12px"><button onclick="rep()">Apply filters</button>
+   <button class="g" onclick="pre(0)">Today</button><button class="g" onclick="pre(6)">Last 7 days</button><button class="g" onclick="pre(-1)">This month</button>
+   <a class="btn" id="xl" style="margin-left:auto">Download Excel</a></div></div>
+ <div class="grid" style="margin-top:14px" id="tot"></div>
+ <div class="card" style="margin-top:14px"><div class="scroll"><table><thead id="rh"></thead><tbody id="rb"></tbody></table></div></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s),T=document.documentElement,E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const J=async(u,o)=>{try{const r=await fetch(u,o);return r.ok?await r.json():null}catch{return null}};
+const P=(u,b,m='POST')=>J(u,{method:m,headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+const tg=()=>T.dataset.theme=(T.dataset.theme||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'))=='dark'?'light':'dark';
+const iso=d=>new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const PAGES=[['dash','▦','Dashboard'],['live','◉','Live'],['students','☺','Students'],['sched','◷','Schedule'],['rep','▤','Reports']];
+$('#nav').innerHTML=PAGES.map(p=>`<a href="#${p[0]}" data-p="${p[0]}"><i>${p[1]}</i>${p[2]}</a>`).join('');
+let cur='dash',S={mode:'auto',active:null,next:''},stream,timer,feed=[],dsel=new Set([0,1,2,3,4]);
+setInterval(()=>{const d=new Date();$('#clk').textContent=d.toLocaleTimeString();$('#clk2').textContent=d.toLocaleTimeString();$('#day').textContent=d.toDateString()},1000);
+
+function go(){cur=(location.hash||'#dash').slice(1);if(!PAGES.some(p=>p[0]==cur))cur='dash';
+ PAGES.forEach(p=>{$('#'+p[0]).hidden=p[0]!=cur});document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p==cur));
+ $('#ttl').textContent=PAGES.find(p=>p[0]==cur)[2];stopCam();
+ ({dash,live:liveTick,students:()=>{stu();groups()},sched:sch,rep:()=>{groups();if(!$('#rs').value)pre(-1);else rep()}})[cur]()}
+addEventListener('hashchange',go);
+
+async function poll(){S=await J('/api/status')||S;$('#demo').hidden=!S.demo;const a=S.active,p=$('#st');p.className='pill '+(a?'on':'off');
+ p.textContent=a?`● Live · ${a.name} · until ${a.end}`:`○ Closed${S.mode=='auto'&&S.next?' · next '+S.next:''}`;
+ document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('sel',b.dataset.m==S.mode));if(cur=='live')liveTick()}
+document.addEventListener('click',async e=>{const m=e.target.dataset?.m;if(m){await P('/api/mode',{mode:m});poll()}});
+setInterval(poll,5000);
+
+async function dash(){const s=await J('/api/summary')||{},c=await J('/api/chart')||[],l=await J('/api/log')||[];
+ ['t:total','p:present','lt:late','a:absent'].forEach(x=>{const[i,k]=x.split(':');$('#'+i).textContent=s[k]??'–'});chart(c);
+ $('#lg').innerHTML=l.map(r=>`<tr><td>${r.t}</td><td>${E(r.name)}</td><td><span class="tag ${r.status}">${r.status}</span></td></tr>`).join('')||'<tr><td class="s">No one marked yet today</td></tr>'}
+function chart(a){if(a.length<2){$('#ch').innerHTML='<text x="20" y="100" fill="var(--mut)">Chart appears after two days of records</text>';return}
+ const w=600,h=200,x=i=>20+i*(w-40)/(a.length-1),y=p=>h-p*h/100+8;let d=`M${x(0)},${y(a[0].p)}`;
+ for(let i=1;i<a.length;i++){const m=(x(i-1)+x(i))/2;d+=` C${m},${y(a[i-1].p)} ${m},${y(a[i].p)} ${x(i)},${y(a[i].p)}`}
+ $('#ch').innerHTML=[0,50,100].map(p=>`<line x1="0" x2="${w}" y1="${y(p)}" y2="${y(p)}" stroke="var(--bd)"/><text x="0" y="${y(p)-3}" font-size="9" fill="var(--mut)">${p}%</text>`).join('')+
+ `<path d="${d} L${x(a.length-1)},${h+8} L${x(0)},${h+8}Z" fill="var(--ac)" opacity=".15"/><path d="${d}" fill="none" stroke="var(--ac)" stroke-width="2"/>`+a.map((q,i)=>`<circle cx="${x(i)}" cy="${y(q.p)}" r="3" fill="var(--ac)"><title>${q.d}: ${q.p}%</title></circle>`).join('')}
+
+/* camera */
+const grab=v=>new Promise(r=>{const c=document.createElement('canvas');c.width=640;c.height=Math.round(v.videoHeight*640/v.videoWidth)||480;c.getContext('2d').drawImage(v,0,0,c.width,c.height);c.toBlob(r,'image/jpeg',.88)});
+async function cam(v){if(stream)return;try{stream=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720}})}catch{alert('Camera blocked. Allow camera access (needs localhost or HTTPS).');return}
+ v.srcObject=stream;if(v.id=='v')timer=setInterval(scan,500)}
+function stopCam(){clearInterval(timer);stream&&stream.getTracks().forEach(t=>t.stop());stream=null;document.querySelectorAll('video').forEach(v=>v.srcObject=null);const o=$('#o');o.getContext('2d').clearRect(0,0,o.width,o.height)}
+function liveTick(){const a=S.active;$('#hud').textContent=a?`${a.name} · closes ${a.end}`:'';$('#idle').hidden=!!a;$('#nx').textContent=S.mode=='auto'&&S.next?'Next: '+S.next:S.mode=='off'?'Turned off. Press On or Auto to open.':'';
+ if(a&&!stream)cam($('#v'));if(!a&&stream)stopCam();cnt()}
+async function cnt(){const s=await J('/api/summary');if(s)$('#cnt').textContent=`${s.present} / ${s.total}`}
+function fs(){document.fullscreenElement?document.exitFullscreen():$('#stage').requestFullscreen()}
+document.addEventListener('fullscreenchange',()=>$('#fsb').textContent=document.fullscreenElement?'✕ Exit':'⛶ Full screen');
+let busy=0,popT;
+async function scan(){const v=$('#v');if(busy||!v.videoWidth)return;busy=1;const f=new FormData();f.append('file',await grab(v),'f.jpg');
+ const r=await J('/api/recognize',{method:'POST',body:f});busy=0;const o=$('#o'),x=o.getContext('2d');
+ const W=o.width=o.clientWidth,H=o.height=o.clientHeight,k=Math.min(W/v.videoWidth,H/v.videoHeight),m=k*v.videoWidth/640,ox=(W-v.videoWidth*k)/2,oy=(H-v.videoHeight*k)/2;
+ x.clearRect(0,0,W,H);if(!r)return;if(r.active===false){poll();return}
+ r.faces.forEach(q=>{const[a,b,c,d]=q.box,col=q.roll?'#22c55e':'#ef4444';x.strokeStyle=col;x.lineWidth=3;x.strokeRect(ox+a*m,oy+b*m,(c-a)*m,(d-b)*m);
+  x.fillStyle=col;x.font='600 18px sans-serif';x.fillText(q.roll?`${q.name} ${Math.round(q.sim*100)}%`:'Unknown',ox+a*m,oy+b*m-8);
+  if(q.marked){feed.unshift(`<li><span>${E(q.name)}</span><span class="tag ${q.marked}">${q.marked} · ${new Date().toLocaleTimeString()}</span></li>`);$('#feed').innerHTML=feed.slice(0,12).join('');
+   const p=$('#pop');p.textContent=`✓ ${q.name} · ${q.marked}`;p.classList.add('show');clearTimeout(popT);popT=setTimeout(()=>p.classList.remove('show'),2500);cnt()}})}
+
+/* students */
+async function groups(){const g=[...new Set((await J('/api/students')||[]).map(s=>s.grp).filter(Boolean))].sort();
+ ['#sg','#rg'].forEach(id=>{const v=$(id).value;$(id).innerHTML='<option value="">All groups</option>'+g.map(x=>`<option>${E(x)}</option>`).join('');$(id).value=v})}
+async function stu(){const l=await J(`/api/students?qs=${encodeURIComponent($('#sq').value)}&grp=${encodeURIComponent($('#sg').value)}`)||[];
+ $('#sl').innerHTML=l.map(s=>`<tr><td>${E(s.roll)}</td><td>${E(s.name)}</td><td>${E(s.grp)}</td><td>${s.photos}</td><td><button class="g" onclick="edit('${E(s.roll)}','${E(s.name)}','${E(s.grp)}')">Edit</button><button class="d" onclick="del('${E(s.roll)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan=5 class="s">No students yet. Register the first one.</td></tr>'}
+async function edit(r,n,g){const nn=prompt('Full name',n);if(nn===null)return;const gg=prompt('Group / class',g);if(gg===null)return;await P('/api/students/'+encodeURIComponent(r),{name:nn,grp:gg},'PUT');stu();groups()}
+async function del(r){if(!confirm(`Delete roll ${r} and all their attendance records? This cannot be undone.`))return;await J('/api/students/'+encodeURIComponent(r),{method:'DELETE'});stu();groups()}
+const say=t=>$('#msg').textContent=t;
+async function send(files){const roll=$('#er').value.trim(),name=$('#en').value.trim();if(!roll||!name){say('Enter a roll number and full name first.');return}
+ const f=new FormData();f.append('roll',roll);f.append('name',name);f.append('grp',$('#eg').value);files.forEach((b,i)=>f.append('files',b,i+'.jpg'));say('Checking photos…');
+ const r=await J('/api/enroll',{method:'POST',body:f});if(!r)return say('Server not reachable.');
+ if(r.error)return say('✕ '+r.error);say(`✓ Registered ${name} with ${r.accepted} of ${r.received} photos.`);['#er','#en','#eg'].forEach(i=>$(i).value='');stu();groups()}
+async function burst(){if(!stream){say('Start the camera first.');return}const v=$('#rv'),fl=[];
+ for(let i=1;i<=8;i++){say(`Photo ${i} of 8 · slowly turn your head left, right, up, down`);await new Promise(r=>setTimeout(r,1000));fl.push(await grab(v))}send(fl)}
+function upload(){const f=[...$('#up').files];if(f.length)send(f);$('#up').value=''}
+
+/* schedule */
+const DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function chips(){$('#days').innerHTML=DN.map((d,i)=>`<button class="${dsel.has(i)?'sel':''}" onclick="dsel.has(${i})?dsel.delete(${i}):dsel.add(${i});chips()">${d}</button>`).join('')}
+async function sch(){chips();const l=await J('/api/schedules')||[];
+ $('#sc').innerHTML=l.map(s=>`<tr><td><b>${E(s.name)}</b><div class="s">${s.days.split(',').map(d=>DN[d]).join(' ')}</div></td><td>${s.start}–${s.end}<div class="s">late after ${s.late}</div></td>
+ <td><button class="${s.on?'':'g'}" onclick='P("/api/schedules",${JSON.stringify({...s,on:!s.on})}).then(sch)'>${s.on?'On':'Off'}</button><button class="d" onclick="J('/api/schedules/${s.id}',{method:'DELETE'}).then(sch)">Delete</button></td></tr>`).join('')||'<tr><td class="s">No schedules yet. Add one so attendance opens by itself.</td></tr>'}
+async function saveS(){const n=$('#sn').value.trim();if(!n||!dsel.size)return alert('Enter a name and pick at least one day.');if($('#se').value<=$('#ss').value)return alert('Closing time must be after opening time.');
+ await P('/api/schedules',{name:n,days:[...dsel].sort().join(','),start:$('#ss').value,end:$('#se').value,late:$('#sl2').value,on:true});$('#sn').value='';sch();poll()}
+
+/* reports */
+function pre(n){const t=new Date(),s=n<0?new Date(t.getFullYear(),t.getMonth(),1):new Date(t-n*864e5);$('#rs').value=iso(s);$('#re').value=iso(t);rep()}
+async function rep(){const qs=new URLSearchParams({kind:$('#rk').value,start:$('#rs').value,end:$('#re').value,grp:$('#rg').value,status:$('#rt').value,qs:$('#rq').value}).toString();
+ $('#xl').href='/api/export?'+qs;const r=await J('/api/report?'+qs);if(!r)return;
+ $('#tot').innerHTML=['Present','Late','Absent'].map(k=>`<div class="card"><div class="n">${r.totals[k]||0}</div><div class="l">${k}</div></div>`).join('');
+ const c=r.rows[0]?Object.keys(r.rows[0]):[];$('#rh').innerHTML='<tr>'+c.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+ $('#rb').innerHTML=r.rows.map(x=>'<tr>'+c.map(k=>`<td>${k=='Status'?`<span class="tag ${x[k]}">${x[k]}</span>`:E(x[k])}</td>`).join('')+'</tr>').join('')||'<tr><td class="s">No records for these filters. Attendance days appear once a session has run.</td></tr>'}
+['rk','rg','rt'].forEach(i=>$('#'+i).addEventListener('change',rep));$('#rq').addEventListener('input',()=>{clearTimeout(window.rt);window.rt=setTimeout(rep,300)});
+poll().then(go);
+</script></body></html>
